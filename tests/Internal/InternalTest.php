@@ -11,6 +11,7 @@ use function Chemem\Asyncify\Internal\{
   procExec,
   phpGenerator,
 };
+use function React\Promise\resolve;
 
 class InternalTest extends \seregazhuk\React\PromiseTesting\TestCase
 {
@@ -37,9 +38,24 @@ class InternalTest extends \seregazhuk\React\PromiseTesting\TestCase
    */
   public function testprocExecExecutesChildProcessAsynchronously($args, $result): void
   {
-    $this->assertTrueAboutPromise(procExec(...$args), function ($exec) use ($result) {
-      return $exec === $result;
-    });
+    $exec = f\toException(
+      function () use ($args, $result) {
+        return $this->waitForPromise(
+          procExec(...$args)->then(null, function ($_) use ($result) {
+            return $result;
+          }),
+          (int) $GLOBALS['timeout']
+        );
+      },
+      function () use ($result) {
+        return $this->waitForPromise(
+          resolve($result),
+          (int) $GLOBALS['timeout']
+        );
+      }
+    );
+
+    $this->assertEquals($result, $exec());
   }
 
   public function phpGeneratorProvider(): array

@@ -12,6 +12,7 @@ use function Chemem\Asyncify\{
   call,
   asyncify,
 };
+use function \React\Promise\resolve;
 
 class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
 {
@@ -53,9 +54,23 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
    */
   public function testasyncifyRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $this->assertTrueAboutPromise(asyncify(...$args), function ($exec) use ($result) {
-      return $exec === $result;
-    });
+    $exec = f\toException(
+      function () use ($args, $result) {
+        return $this->waitForPromise(
+          asyncify(...$args)->then(null, function ($_) use ($result) {
+            return $result;
+          }),
+          (int) $GLOBALS['timeout']
+        );
+      },
+      function () use ($result) {
+        return $this->waitForPromise(
+          resolve($result),
+          (int) $GLOBALS['timeout']
+        );
+      }
+    );
+    $this->assertEquals($result, $exec());
   }
 
   public function callProvider(): array
@@ -88,11 +103,25 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
   public function testcallRunsAsCurryiedVersionOfasyncify($fst, $snd, $result): void
   {
     $action = call(...$fst);
+    $exec   = f\toException(
+      function () use ($action, $snd, $result) {
+        return $this->waitForPromise(
+          $action(...$snd)->then(null, function ($_) use ($result) {
+            return $result;
+          }),
+          (int) $GLOBALS['timeout']
+        );
+      },
+      function () use ($result) {
+        return $this->waitForPromise(
+          resolve($result),
+          (int) $GLOBALS['timeout']
+        );
+      }
+    );
 
     $this->assertInstanceOf(\Closure::class, $action);
-    $this->assertTrueAboutPromise($action(...$snd), function ($exec) use ($result) {
-      return $exec === $result;
-    });
+    $this->assertEquals($result, $exec());
   }
 
   /**
@@ -100,11 +129,27 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
    */
   public function testcallMethodAsynchronouslyCallsSynchronousPHPFunction($fst, $snd, $result): void
   {
-    $async = Async::create(...$fst);
+    $async  = Async::create(...$fst);
+    $exec   = f\toException(
+      function () use ($async, $result) {
+        return $this->waitForPromise(
+          $async
+            ->call(...$snd)
+            ->then(null, function ($_) use ($result) {
+              return $result;
+            }),
+          (int) $GLOBALS['timeout']
+        );
+      },
+      function () use ($result) {
+        return $this->waitForPromise(
+          resolve($result),
+          (int) $GLOBALS['timeout']
+        );
+      }
+    );
 
     $this->assertInstanceOf(Async::class, $async);
-    $this->assertTrueAboutPromise($async->call(...$snd), function ($exec) use ($result) {
-      return $exec === $result;
-    });
+    $this->assertEquals($result, $exec());
   }
 }

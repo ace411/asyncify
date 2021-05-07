@@ -13,7 +13,7 @@
     </include>
   </coverage>
   <php>
-    <var name="timeout" value="45" />
+    <var name="timeout" value="5" />
   </php>
   <testsuites>
     <testsuite name="asyncify tests">
