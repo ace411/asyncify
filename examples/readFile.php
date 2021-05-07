@@ -23,7 +23,7 @@ $call = call($loop);
 $proc = $call('file_get_contents', [])
   ->then(
     function (?string $result) {
-      echo $result;
+      \var_dump($result);
     },
     function (\Throwable $err) {
       echo $err->getMessage();
