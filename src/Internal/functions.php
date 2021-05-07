@@ -76,12 +76,6 @@ function phpGenerator(
   string $func,
   string $print = 'json_encode'
 ): string {
-  // execution template
-  $template = <<<'TEMPLATE'
-  require '{root}/vendor/autoload.php';
-  {expr}
-  TEMPLATE;
-
   $generator = f\compose(
     // replace first semicolon
     // f\partial('str_replace', ';', ''),
@@ -90,7 +84,10 @@ function phpGenerator(
     // print the output via the echo directive
     f\partialRight(f\partial(f\concat, '', 'echo '), ';'),
     // replace {expr} with the expression to evaluate
-    f\partialRight(f\partial('str_replace', '{expr}'), $template),
+    f\partialRight(
+      f\partial('str_replace', '{expr}'),
+      'require \'{root}/vendor/autoload.php\'; {expr}'
+    ),
     // replace all single quotes with double quotes
     f\partial('str_replace', '\'', '"'),
     // enclose expression in single quotes
