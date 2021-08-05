@@ -25,11 +25,10 @@ $ composer require chemem/asyncify
 If you want to take a Functional Programming approach, facilitated by currying, the example below should suffice.
 
 ```php
+use React\EventLoop\Loop;
 use function Chemem\Asyncify\call;
 
-$loop = Factory::create();
-
-$call = call($loop, __DIR__);
+$call = call(Loop::get(), __DIR__);
 
 $exec = $call('file_get_contents', ['foo.txt'])->then(
   function (?string $contents) {
@@ -39,8 +38,6 @@ $exec = $call('file_get_contents', ['foo.txt'])->then(
     echo $err->getMessage();
   }
 );
-
-$loop->run();
 ```
 
 ### Or
@@ -48,11 +45,10 @@ $loop->run();
 If you prefer a more conventional OOP approach, the snippet below should prove apt.
 
 ```php
+use React\EventLoop\Loop;
 use Chemem\Asyncify\Async;
 
-$loop = Factory::create();
-
-$exec = Async::create($loop)
+$exec = Async::create(Loop::get())
   ->call('file_get_contents', ['foo.txt'])
   ->then(
     function (?string $contents) {
@@ -62,9 +58,9 @@ $exec = Async::create($loop)
       echo $err->getMessage();
     }
   );
-
-$loop->run();
 ```
+
+Though both examples in the antecedent text utilize the new default loop, the old standard with the `Factory::create()` and `$loop->run()` artifacts is still supported.
 
 **Note:** The examples directory contains more nuanced uses of the library that I recommend you check out.
 

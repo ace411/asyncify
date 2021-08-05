@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use React\EventLoop\Factory;
+use React\EventLoop\Loop;
 use function Chemem\Asyncify\call;
 
 $square = <<<'CODE'
@@ -22,9 +22,7 @@ $square = <<<'CODE'
 })
 CODE;
 
-$loop = Factory::create();
-
-$call = call($loop);
+$call = call(Loop::get());
 
 $proc = $call($square, [12])->then(
   function (int $square) {
@@ -34,5 +32,3 @@ $proc = $call($square, [12])->then(
     echo $err->getMessage() . PHP_EOL;
   }
 );
-
-$loop->run();
