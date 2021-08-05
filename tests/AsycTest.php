@@ -79,7 +79,9 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
       [
         [$loop],
         [
-          '(fn ($x) => $x ** 2)',
+          'function ($x) {
+            return $x ** 2;
+          }',
           [12],
         ],
         144,
@@ -159,11 +161,9 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
       [
         [$loop],
         [
-          <<<'CODE'
-          function (int $x) {
+          'function (int $x) {
             return $x ** 2;
-          }
-          CODE,
+          }',
           ['foo'],
         ],
         'Argument 1 passed to {closure}() must be of the type int, string given, called in Command line code on line 1',
@@ -171,15 +171,13 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
       [
         [$loop],
         [
-          <<<'CODE'
-          (function (int $x) {
+          '(function (int $x) {
             if ($x < 10) {
               throw new \ValueError("Out of bounds");
             }
 
             return $x ** 2;
-          })
-          CODE,
+          })',
           [4],
         ],
         'Out of bounds',
