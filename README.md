@@ -1,4 +1,15 @@
-# asyncify
+<h1 align="center">asyncify</h1>
+
+<span style="display:block;text-align:center;" align="center">
+
+[![StyleCI](https://github.styleci.io/repos/365018048/shield?branch=master)](https://github.styleci.io/repos/365018048?branch=master)
+[![asyncify CI](https://github.com/ace411/asyncify/actions/workflows/ci.yml/badge.svg)](https://github.com/ace411/asyncify/actions/workflows/ci.yml)
+[![License](http://poser.pugx.org/chemem/asyncify/license)](https://packagist.org/packages/chemem/asyncify)
+[![composer.lock](http://poser.pugx.org/chemem/asyncify/composerlock)](https://packagist.org/packages/chemem/asyncify)
+[![Dependents](http://poser.pugx.org/chemem/asyncify/dependents)](https://packagist.org/packages/chemem/asyncify)
+[![Latest Stable Version](http://poser.pugx.org/chemem/asyncify/v)](https://packagist.org/packages/chemem/asyncify)
+
+</span>
 
 A simple PHP library that runs your synchronous PHP functions asynchronously.
 
