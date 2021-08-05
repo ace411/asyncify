@@ -197,7 +197,7 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
           $async->call(...$snd)->then(null, function ($err) {
             return $err->getMessage();
           }),
-          (int) $GLOBALS['timeout'],
+          (int) $GLOBALS['timeout']
         );
       },
       function () use ($result) {
