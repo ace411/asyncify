@@ -55,7 +55,7 @@ function asyncify(
     // -> serialize the resultant exception object
     f\partialRight(
       f\partial(f\concat, '', f\toException, '(function () { return ('),
-      ', '. f\identity . ')()'
+      ', ' . f\identity . ')()'
     ),
     // generate PHP code
     f\partialRight(
