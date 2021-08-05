@@ -2,7 +2,7 @@
 
 /**
  * package functions
- * 
+ *
  * @package chemem/asyncify
  * @author Lochemem Bruno Michael
  * @license Apache-2.0
@@ -12,16 +12,12 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify;
 
-use \React\{
-  EventLoop\LoopInterface,
-  Promise\PromiseInterface,
-};
+use React\EventLoop\LoopInterface;
+use React\Promise\PromiseInterface;
 use Chemem\Asyncify\Internal as async;
-use \Chemem\Bingo\Functional\Algorithms as f;
-use function \React\Promise\{
-  reject,
-  resolve,
-};
+use Chemem\Bingo\Functional as f;
+use function React\Promise\reject;
+use function React\Promise\resolve;
 
 const asyncify = __NAMESPACE__ . '\\asyncify';
 
@@ -29,7 +25,7 @@ const asyncify = __NAMESPACE__ . '\\asyncify';
  * asyncify
  * runs a synchronous PHP function asynchronously
  * -> subsumes result in a promise
- * 
+ *
  * asyncify :: Object -> String -> String -> Array -> Promise s a
  *
  * @param LoopInterface $loop
@@ -38,7 +34,7 @@ const asyncify = __NAMESPACE__ . '\\asyncify';
  * @param array $args
  * @return PromiseInterface
  * @example
- * 
+ *
  * asyncify($loop, __DIR__, 'file_get_contents', ['/path/to/file'])
  * => object(React\Promise\Promise) {}
  */
@@ -70,17 +66,34 @@ function asyncify(
     // run process
     f\partial(async\procExec, $loop)
   );
-  
+
   return $generator($args)->then(
     function (string $chunk) {
       // check if Warning or Notice exist in message
       // -> eliminate warning and notice messages from serialized output if they do
       // -> return chunk otherwise
-      $result = \unserialize(
-        \preg_match('/(Notice|Warning|PHP Notice|PHP Warning){1}([\s\w\W\d]*)/', $chunk) ?
-          f\last(\explode(PHP_EOL, $chunk)) :
+      if (
+        \preg_match(
+          '/(Parse error|Notice|Warning|PHP Notice|PHP Warning){1}([\s\w\W\d]*)/',
           $chunk
-      );
+        )
+      ) {
+        // split message by empty line \n
+        $message  = \explode(PHP_EOL, $chunk);
+        // memoize message line count
+        $count    = \count($message);
+        // prime message list items for extraction
+        $item     = f\partial(f\pluck, $message);
+        // extract last item from list (typically defaults to serializable null value `N;`)
+        $last     = \unserialize($item($count - 1));
+
+        // extract second-to-last message item if the last one is a serializable null value
+        $result   = new \Error(
+          \is_null($last) || empty($last) ? $item($count - 2) : $last
+        );
+      } else {
+        $result = \unserialize($chunk);
+      }
 
       return $result instanceof \Throwable ?
         reject($result) :
@@ -95,7 +108,7 @@ const call = __NAMESPACE__ . '\\call';
  * call
  * curryied version of asyncify
  * -> allows users to bootstrap asynchronous function calls
- * 
+ *
  * call :: Object -> String -> (String -> Array -> Promise s a)
  *
  * @param mixed ...$args

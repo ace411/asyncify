@@ -2,7 +2,7 @@
 
 /**
  * core library object
- * 
+ *
  * @package chemem/asyncify
  * @author Lochemem Bruno Michael
  * @license Apache-2.0
@@ -12,10 +12,8 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify;
 
-use \React\{
-  EventLoop\LoopInterface,
-  Promise\PromiseInterface,
-};
+use React\EventLoop\LoopInterface;
+use React\Promise\PromiseInterface;
 
 class Async
 {
@@ -42,7 +40,7 @@ class Async
   /**
    * create
    * instantiates Async object
-   * 
+   *
    * create :: Object -> String -> Object
    *
    * @param LoopInterface $loop
@@ -58,7 +56,7 @@ class Async
    * call
    * asynchronously calls a synchronous PHP function
    * -> returns result subsumed in promise
-   * 
+   *
    * call :: String -> Array -> Promise s a
    *
    * @param string $function

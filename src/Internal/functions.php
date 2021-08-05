@@ -3,7 +3,7 @@
 /**
  * internal processing functions
  * -> power asyncify's more notable functions
- * 
+ *
  * @package chemem/asyncify
  * @author Lochemem Bruno Michael
  * @license Apache-2.0
@@ -13,17 +13,13 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify\Internal;
 
-use \React\{
-  Promise\Stream,
-  ChildProcess\Process,
-  EventLoop\LoopInterface,
-  Promise\PromiseInterface,
-};
-use \Chemem\Bingo\Functional\Algorithms as f;
-use function \React\Promise\{
-  reject,
-  resolve,
-};
+use React\Promise\Stream;
+use React\ChildProcess\Process;
+use React\EventLoop\LoopInterface;
+use React\Promise\PromiseInterface;
+use Chemem\Bingo\Functional as f;
+use function React\Promise\reject;
+use function React\Promise\resolve;
 
 const procExec = __NAMESPACE__ . '\\procExec';
 
@@ -32,13 +28,13 @@ const procExec = __NAMESPACE__ . '\\procExec';
  * executes asynchronous process and wraps the result in a promise
  *
  * procExec :: Object -> String -> Promise s a
- * 
+ *
  * @internal
  * @param LoopInterface $loop
  * @param string $code
  * @return PromiseInterface
  * @example
- * 
+ *
  * procExec($loop, 'php -r "echo 12;"')
  * => object(React\Promise\Promise) {}
  */
@@ -58,7 +54,7 @@ const phpGenerator = __NAMESPACE__ . '\\phpGenerator';
 /**
  * phpGenerator
  * generates executable PHP directive with specified function call
- * 
+ *
  * phpGenerator :: String -> String -> String -> String
  *
  * @internal
@@ -67,7 +63,7 @@ const phpGenerator = __NAMESPACE__ . '\\phpGenerator';
  * @param string $print
  * @return string
  * @example
- * 
+ *
  * phpGenerator('path/to/vendor/dir', 'identity(12)')
  * => php -r 'require "/root/vendor/autoload.php"; echo json_encode(identity(12));'
  */

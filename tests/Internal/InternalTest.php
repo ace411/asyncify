@@ -6,11 +6,9 @@ namespace Chemem\Asyncify\Tests;
 
 \error_reporting(0);
 
-use Chemem\Bingo\Functional\Algorithms as f;
-use function Chemem\Asyncify\Internal\{
-  procExec,
-  phpGenerator,
-};
+use Chemem\Bingo\Functional as f;
+use function Chemem\Asyncify\Internal\procExec;
+use function Chemem\Asyncify\Internal\phpGenerator;
 use function React\Promise\resolve;
 
 class InternalTest extends \seregazhuk\React\PromiseTesting\TestCase

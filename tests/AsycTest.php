@@ -6,13 +6,11 @@ namespace Chemem\Asyncify\Tests;
 
 \error_reporting(0);
 
-use Chemem\Bingo\Functional\Algorithms as f;
+use Chemem\Bingo\Functional as f;
 use Chemem\Asyncify\Async;
-use function Chemem\Asyncify\{
-  call,
-  asyncify,
-};
-use function \React\Promise\resolve;
+use function Chemem\Asyncify\call;
+use function Chemem\Asyncify\asyncify;
+use function React\Promise\resolve;
 
 class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
 {
@@ -151,5 +149,68 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
 
     $this->assertInstanceOf(Async::class, $async);
     $this->assertEquals($result, $exec());
+  }
+
+  public function errantCallProvider(): array
+  {
+    $loop = $this->eventLoop();
+
+    return [
+      [
+        [$loop],
+        [
+          <<<'CODE'
+          function (int $x) {
+            return $x ** 2;
+          }
+          CODE,
+          ['foo'],
+        ],
+        'Argument 1 passed to {closure}() must be of the type int, string given, called in Command line code on line 1',
+      ],
+      [
+        [$loop],
+        [
+          <<<'CODE'
+          (function (int $x) {
+            if ($x < 10) {
+              throw new \ValueError("Out of bounds");
+            }
+
+            return $x ** 2;
+          })
+          CODE,
+          [4],
+        ],
+        'Out of bounds',
+      ],
+    ];
+  }
+
+  /**
+   * @dataProvider errantCallProvider
+   */
+  public function testParserRejectsResultOfErrantFunctionCall($fst, $snd, $result): void
+  {
+    $async  = Async::create(...$fst);
+    $final  = f\toException(
+      function () use ($async, $result) {
+        return $this->waitForPromise(
+          $async->call(...$snd)->then(null, function ($err) {
+            return $err->getMessage();
+          }),
+          (int) $GLOBALS['timeout'],
+        );
+      },
+      function () use ($result) {
+        return $this->waitForPromise(
+          resolve($result),
+          (int) $GLOBALS['timeout']
+        );
+      }
+    );
+
+    $this->assertPromiseRejects($async->call(...$snd));
+    $this->assertEquals($result, $final());
   }
 }

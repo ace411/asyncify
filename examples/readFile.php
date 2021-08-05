@@ -3,7 +3,7 @@
 /**
  * simple script that uses asyncify to read a file's contents
  * -> wraps around PHP's native `file_get_contents` function
- * 
+ *
  * @package chemem/asyncify
  * @author Lochemem Bruno Michael
  * @license Apache-2.0
