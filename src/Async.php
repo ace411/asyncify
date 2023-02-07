@@ -15,6 +15,8 @@ namespace Chemem\Asyncify;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
+use function Chemem\Asyncify\Internal\asyncify;
+
 class Async
 {
   /**
@@ -25,16 +27,16 @@ class Async
   private $loop;
 
   /**
-   * project root directory
+   * path to autoloader
    *
-   * @var string $rootDir
+   * @var string $autoload
    */
-  private $rootDir;
+  private $autoload;
 
-  public function __construct(LoopInterface $loop, ?string $rootDir = null)
+  public function __construct(?string $autoload = null, ?LoopInterface $loop = null)
   {
-    $this->loop    = $loop;
-    $this->rootDir = $rootDir;
+    $this->loop     = $loop;
+    $this->autoload = $autoload;
   }
 
   /**
@@ -44,18 +46,17 @@ class Async
    * create :: Object -> String -> Object
    *
    * @param LoopInterface $loop
-   * @param string $rootDir
+   * @param string $autoload
    * @return Async
    */
-  public static function create(LoopInterface $loop, ?string $rootDir = null): Async
+  public static function create(?string $autoload = null, ?LoopInterface $loop = null): Async
   {
-    return new static($loop, $rootDir);
+    return new static($autoload, $loop);
   }
 
   /**
    * call
-   * asynchronously calls a synchronous PHP function
-   * -> returns result subsumed in promise
+   * asynchronously calls a synchronous PHP function and subsumes result in promise
    *
    * call :: String -> Array -> Promise s a
    *
@@ -65,6 +66,6 @@ class Async
    */
   public function call(string $function, array $args): PromiseInterface
   {
-    return asyncify($this->loop, $this->rootDir, $function, $args);
+    return asyncify($function, $args, $this->autoload, $this->loop);
   }
 }
