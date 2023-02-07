@@ -70,7 +70,7 @@ $exec = Async::create()
 
 The examples directory contains more nuanced uses of the library that I recommend you check out.
 
-## Limitations
+## Limitation
 
 `asyncify` is no panacea, but is capable of asynchronously executing a plethora of blocking calls. As presently constituted, the library is incapable of processing inputs and outputs that cannot be serialized.
 
@@ -83,7 +83,7 @@ class Async {
 
   /* Methods */
   public static create( ?string $autoload = null [, ?React\EventLoop\LoopInterface $rootDir = null ] ) : Async;
-  public function call( string $function [, array $args ] ) : PromiseInterface;
+  public function call( string $function [, array $args ] ) : React\Promise\PromiseInterface;
 }
 ```
 
@@ -94,7 +94,7 @@ class Async {
 ### Function
 
 ```php
-call ( string $func [, array $args [, ?string $autoload = null [, ?React\EventLoop\LoopInterface $args = null ] ] ] ) : PromiseInterface
+call ( string $func [, array $args [, ?string $autoload = null [, ?React\EventLoop\LoopInterface $args = null ] ] ] ) : React\Promise\PromiseInterface;
 ```
 
 `call` - Curryied function that bootstraps asynchronous function calls
