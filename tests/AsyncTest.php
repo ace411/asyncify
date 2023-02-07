@@ -8,6 +8,7 @@ use Chemem\Asyncify\Async;
 use PHPUnit\Framework\TestCase;
 
 use function Chemem\Asyncify\call;
+use function Chemem\Bingo\Functional\concat;
 use function Chemem\Bingo\Functional\toException;
 use function React\Async\await;
 use function React\Promise\resolve;
@@ -20,14 +21,7 @@ class AsyncTest extends TestCase
       // invalid call to user-specified function
       [
         [
-          <<<'PHP'
-          (function (...$args) {
-            if (!\is_file($args[0])) {
-              throw new \Exception("Could not find file: " . $args[0]);
-            }
-            return \file_get_contents(...$args);
-          })
-          PHP,
+          '(function (...$args) { if (!\is_file($args[0])) { throw new \Exception("Could not find file " . $args[0]); } return \file_get_contents($file); })',
           [12],
         ],
         'Exception: Could not find file: 12',
@@ -35,24 +29,27 @@ class AsyncTest extends TestCase
       // native PHP function
       [
         ['file_get_contents', ['foo.txt']],
-        'Error: file_get_contents(foo.txt): failed to open stream: No such file or directory',
+        concat(
+          ' ',
+          PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
+          'file_get_contents(foo.txt):',
+          PHP_VERSION_ID >= 80000 ? 'Failed' : 'failed',
+          'to open stream: No such file or directory'
+        ),
       ],
       // erroneous call to native PHP function
       [
         ['file_get_contents', []],
-        'Error: file_get_contents() expects at least 1 parameter, 0 given',
+        concat(
+          ' ',
+          PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
+          'file_get_contents() expects at least 1 parameter, 0 given'
+        ),
       ],
       // trigger error in user-defined function
       [
         [
-          <<<'PHP'
-          (function ($file) {
-            if (!\is_file($file)) {
-              trigger_error("Could not find file " . $file);
-            }
-            return \file_get_contents($file);
-          })
-          PHP,
+          '(function ($file) { if (!\is_file($file)) { trigger_error("Could not find file " . $file); } return \file_get_contents($file); })',
           ['foo.txt'],
         ],
         'Error: Could not find file foo.txt',
@@ -60,11 +57,7 @@ class AsyncTest extends TestCase
       // check if objects can be passed
       [
         [
-          <<<'PHP'
-          (function (object $list) {
-            return $list->foo;
-          })
-          PHP,
+          '(function (object $list) { return $list->foo; })',
           [(object)['foo' => 'foo']],
         ],
         'foo',
@@ -72,11 +65,7 @@ class AsyncTest extends TestCase
       // check if arrays can be passed
       [
         [
-          <<<'PHP'
-          (function (array $list) {
-            return $list["foo"];
-          })
-          PHP,
+          '(function (array $list) { return $list["foo"]; })',
           [['foo' => 'foo']],
         ],
         'foo',
@@ -84,11 +73,7 @@ class AsyncTest extends TestCase
       // check if numbers can be passed
       [
         [
-          <<<'PHP'
-          (function (int $x) {
-            return $x + 10;
-          })
-          PHP,
+          '(function (int $x) { return $x + 10; })',
           [10],
         ],
         20,
@@ -96,11 +81,7 @@ class AsyncTest extends TestCase
       // check if objects can be returned
       [
         [
-          <<<'PHP'
-          (function (string $x) {
-            return (object)["foo" => $x];
-          })
-          PHP,
+          '(function (string $x) { return (object)["foo" => $x]; })',
           ['foo'],
         ],
         (object)['foo' => 'foo'],
@@ -108,11 +89,7 @@ class AsyncTest extends TestCase
       // check if arrays can be returned
       [
         [
-          <<<'PHP'
-          (function (string $x) {
-            return ["foo" => $x];
-          })
-          PHP,
+          '(function (string $x) { return ["foo" => $x]; })',
           ['foo'],
         ],
         ['foo' => 'foo'],
