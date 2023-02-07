@@ -4,45 +4,118 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify\Tests;
 
-\error_reporting(0);
-
-use Chemem\Bingo\Functional as f;
 use Chemem\Asyncify\Async;
+use PHPUnit\Framework\TestCase;
+
 use function Chemem\Asyncify\call;
-use function Chemem\Asyncify\asyncify;
+use function Chemem\Bingo\Functional\toException;
+use function React\Async\await;
 use function React\Promise\resolve;
 
-class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
+class AsyncTest extends TestCase
 {
   public function asyncifyProvider(): array
   {
-    $loop = $this->eventLoop();
-
     return [
-      // regular function
+      // invalid call to user-specified function
       [
         [
-          $loop,
-          null,
-          '(fn ($x) => $x ** 2)',
-          [2],
+          <<<'PHP'
+          (function (...$args) {
+            if (!\is_file($args[0])) {
+              throw new \Exception("Could not find file: " . $args[0]);
+            }
+            return \file_get_contents(...$args);
+          })
+          PHP,
+          [12],
         ],
-        4,
+        'Exception: Could not find file: 12',
       ],
       // native PHP function
       [
-        [
-          $loop,
-          f\filePath(0),
-          'file_get_contents',
-          ['foo.txt'],
-        ],
-        false,
+        ['file_get_contents', ['foo.txt']],
+        'Error: file_get_contents(foo.txt): failed to open stream: No such file or directory',
       ],
       // erroneous call to native PHP function
       [
-        [$loop, null, 'explode', []],
-        null,
+        ['file_get_contents', []],
+        'Error: file_get_contents() expects at least 1 parameter, 0 given',
+      ],
+      // trigger error in user-defined function
+      [
+        [
+          <<<'PHP'
+          (function ($file) {
+            if (!\is_file($file)) {
+              trigger_error("Could not find file " . $file);
+            }
+            return \file_get_contents($file);
+          })
+          PHP,
+          ['foo.txt'],
+        ],
+        'Error: Could not find file foo.txt',
+      ],
+      // check if objects can be passed
+      [
+        [
+          <<<'PHP'
+          (function (object $list) {
+            return $list->foo;
+          })
+          PHP,
+          [(object)['foo' => 'foo']],
+        ],
+        'foo',
+      ],
+      // check if arrays can be passed
+      [
+        [
+          <<<'PHP'
+          (function (array $list) {
+            return $list["foo"];
+          })
+          PHP,
+          [['foo' => 'foo']],
+        ],
+        'foo',
+      ],
+      // check if numbers can be passed
+      [
+        [
+          <<<'PHP'
+          (function (int $x) {
+            return $x + 10;
+          })
+          PHP,
+          [10],
+        ],
+        20,
+      ],
+      // check if objects can be returned
+      [
+        [
+          <<<'PHP'
+          (function (string $x) {
+            return (object)["foo" => $x];
+          })
+          PHP,
+          ['foo'],
+        ],
+        (object)['foo' => 'foo'],
+      ],
+      // check if arrays can be returned
+      [
+        [
+          <<<'PHP'
+          (function (string $x) {
+            return ["foo" => $x];
+          })
+          PHP,
+          ['foo'],
+        ],
+        ['foo' => 'foo'],
       ],
     ];
   }
@@ -50,165 +123,35 @@ class AsyncTest extends \seregazhuk\React\PromiseTesting\TestCase
   /**
    * @dataProvider asyncifyProvider
    */
-  public function testasyncifyRunsSynchronousPHPFunctionAsynchronously($args, $result): void
+  public function testcallRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $exec = f\toException(
-      function () use ($args, $result) {
-        return $this->waitForPromise(
-          asyncify(...$args)->then(null, function ($_) use ($result) {
-            return $result;
-          }),
-          (int) $GLOBALS['timeout']
-        );
+    $exec = toException(
+      function (...$args) {
+        return await(call(...$args));
       },
-      function () use ($result) {
-        return $this->waitForPromise(
-          resolve($result),
-          (int) $GLOBALS['timeout']
-        );
+      function (\Throwable $err) {
+        return $err->getMessage();
       }
-    );
-    $this->assertEquals($result, $exec());
-  }
+    )(...$args);
 
-  public function callProvider(): array
-  {
-    $loop = $this->eventLoop();
-
-    return [
-      [
-        [$loop],
-        [
-          'function ($x) {
-            return $x ** 2;
-          }',
-          [12],
-        ],
-        144,
-      ],
-      [
-        [$loop, f\filePath(0)],
-        [
-          'file_get_contents',
-          ['foo.txt'],
-        ],
-        false,
-      ],
-    ];
+    $this->assertEquals($result, $exec);
   }
 
   /**
-   * @dataProvider callProvider
+   * @dataProvider asyncifyProvider
    */
-  public function testcallRunsAsCurryiedVersionOfasyncify($fst, $snd, $result): void
+  public function testAsynccallMethodRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $action = call(...$fst);
-    $exec   = f\toException(
-      function () use ($action, $snd, $result) {
-        return $this->waitForPromise(
-          $action(...$snd)->then(null, function ($_) use ($result) {
-            return $result;
-          }),
-          (int) $GLOBALS['timeout']
-        );
+    $exec = toException(
+      function (...$args) {
+        $async = Async::create();
+        return await($async->call(...$args));
       },
-      function () use ($result) {
-        return $this->waitForPromise(
-          resolve($result),
-          (int) $GLOBALS['timeout']
-        );
+      function (\Throwable $err) {
+        return $err->getMessage();
       }
-    );
+    )(...$args);
 
-    $this->assertInstanceOf(\Closure::class, $action);
-    $this->assertEquals($result, $exec());
-  }
-
-  /**
-   * @dataProvider callProvider
-   */
-  public function testcallMethodAsynchronouslyCallsSynchronousPHPFunction($fst, $snd, $result): void
-  {
-    $async  = Async::create(...$fst);
-    $exec   = f\toException(
-      function () use ($async, $result) {
-        return $this->waitForPromise(
-          $async
-            ->call(...$snd)
-            ->then(null, function ($_) use ($result) {
-              return $result;
-            }),
-          (int) $GLOBALS['timeout']
-        );
-      },
-      function () use ($result) {
-        return $this->waitForPromise(
-          resolve($result),
-          (int) $GLOBALS['timeout']
-        );
-      }
-    );
-
-    $this->assertInstanceOf(Async::class, $async);
-    $this->assertEquals($result, $exec());
-  }
-
-  public function errantCallProvider(): array
-  {
-    $loop = $this->eventLoop();
-
-    return [
-      [
-        [$loop],
-        [
-          'function (int $x) {
-            return $x ** 2;
-          }',
-          ['foo'],
-        ],
-        'Argument 1 passed to {closure}() must be of the type int, string given, called in Command line code on line 1',
-      ],
-      [
-        [$loop],
-        [
-          '(function (int $x) {
-            if ($x < 10) {
-              throw new \ValueError("Out of bounds");
-            }
-
-            return $x ** 2;
-          })',
-          [4],
-        ],
-        'Out of bounds',
-      ],
-    ];
-  }
-
-  /**
-   * @dataProvider errantCallProvider
-   */
-  public function testParserRejectsResultOfErrantFunctionCall($fst, $snd, $result): void
-  {
-    $async  = Async::create(...$fst);
-    $final  = f\toException(
-      function () use ($async, $result) {
-        return $this->waitForPromise(
-          $async->call(...$snd)->then(null, function ($err) {
-            return $err->getMessage();
-          }),
-          (int) $GLOBALS['timeout']
-        );
-      },
-      function () use ($result) {
-        return $this->waitForPromise(
-          resolve($result),
-          (int) $GLOBALS['timeout']
-        );
-      }
-    );
-
-    $this->assertPromiseRejects($async->call(...$snd));
-    $this->assertEquals($result, $final());
+    $this->assertEquals($result, $exec);
   }
 }
