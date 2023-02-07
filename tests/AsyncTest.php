@@ -21,7 +21,7 @@ class AsyncTest extends TestCase
       // invalid call to user-specified function
       [
         [
-          '(function (...$args) { if (!\is_file($args[0])) { throw new \Exception("Could not find file " . $args[0]); } return \file_get_contents($file); })',
+          '(function (...$args) { if (!\is_file($args[0])) { throw new \Exception("Could not find file: " . $args[0]); } return \file_get_contents($file); })',
           [12],
         ],
         'Exception: Could not find file: 12',
@@ -31,8 +31,7 @@ class AsyncTest extends TestCase
         ['file_get_contents', ['foo.txt']],
         concat(
           ' ',
-          PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
-          'file_get_contents(foo.txt):',
+          'Error: file_get_contents(foo.txt):',
           PHP_VERSION_ID >= 80000 ? 'Failed' : 'failed',
           'to open stream: No such file or directory'
         ),
@@ -43,7 +42,9 @@ class AsyncTest extends TestCase
         concat(
           ' ',
           PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
-          'file_get_contents() expects at least 1 parameter, 0 given'
+          'file_get_contents() expects at least 1', 
+          PHP_VERSION_ID >= 80000 ? 'argument,' : 'parameter,', 
+          '0 given'
         ),
       ],
       // trigger error in user-defined function
