@@ -42,8 +42,8 @@ class AsyncTest extends TestCase
         concat(
           ' ',
           PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
-          'file_get_contents() expects at least 1', 
-          PHP_VERSION_ID >= 80000 ? 'argument,' : 'parameter,', 
+          'file_get_contents() expects at least 1',
+          PHP_VERSION_ID >= 80000 ? 'argument,' : 'parameter,',
           '0 given'
         ),
       ],
