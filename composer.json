@@ -1,8 +1,8 @@
 {
   "name": "chemem/asyncify",
-  "type": "library",
   "description": "A package that runs synchronous PHP functions asynchronously.",
   "license": "Apache-2.0",
+  "type": "library",
   "authors": [
     {
       "name": "Lochemem Bruno Michael",
@@ -18,17 +18,17 @@
   },
   "require-dev": {
     "ergebnis/composer-normalize": "~2",
-    "friendsofphp/php-cs-fixer": "~2",
+    "friendsofphp/php-cs-fixer": "~2 || ~3",
     "phpunit/phpunit": "~8 || ~9",
-    "seregazhuk/react-promise-testing": "~0"
+    "react/async": "~3 || ~4"
   },
+  "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
       "Chemem\\Asyncify\\": "src/"
     },
     "files": [
-      "src/Internal/functions.php",
-      "src/functions.php"
+      "src/index.php"
     ]
   },
   "autoload-dev": {
@@ -36,7 +36,11 @@
       "Chemem\\Asyncify\\Tests\\": "tests/"
     }
   },
-  "minimum-stability": "stable",
+  "config": {
+    "allow-plugins": {
+      "ergebnis/composer-normalize": true
+    }
+  },
   "scripts": {
     "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.php --diff --verbose --allow-risky=yes",
     "test": "phpunit -c phpunit.xml.dist"

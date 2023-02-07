@@ -14,16 +14,15 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use React\EventLoop\Loop;
+
 use function Chemem\Asyncify\call;
 
-$call = call(Loop::get());
-
-$proc = $call('file_get_contents', [])
+$call = call('file_get_contents', [])
   ->then(
-    function (?string $result) {
-      \var_dump($result);
+    function (?int $result) {
+      echo \sprintf("Wrote %d bytes\n", $result);
     },
     function (\Throwable $err) {
-      echo $err->getMessage();
+      echo $err->getMessage() . PHP_EOL;
     }
   );

@@ -4,80 +4,40 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify\Tests;
 
-\error_reporting(0);
+use PHPUnit\Framework\TestCase;
 
-use Chemem\Bingo\Functional as f;
-use function Chemem\Asyncify\Internal\procExec;
-use function Chemem\Asyncify\Internal\phpGenerator;
-use function React\Promise\resolve;
+use function Chemem\Asyncify\Internal\proc;
+use function Chemem\Bingo\Functional\toException;
+use function React\Async\await;
 
-class InternalTest extends \seregazhuk\React\PromiseTesting\TestCase
+class InternalTest extends TestCase
 {
-  public function procExecProvider(): array
+  public function procProvider(): array
   {
-    $loop = $this->eventLoop();
-
     return [
       // commandline process
-      [
-        [$loop, 'echo foo'],
-        'foo',
-      ],
+      [['echo foo'], "foo\n"],
       // php commandline process
-      [
-        [$loop, phpGenerator(f\filePath(0), f\identity . '(12)')],
-        12,
-      ],
+      [['php -r \'echo "foo";\''], 'foo'],
+      // invalid input
+      [['kat --foo'], ''],
     ];
   }
 
   /**
-   * @dataProvider procExecProvider
+   * @dataProvider procProvider
    */
-  public function testprocExecExecutesChildProcessAsynchronously($args, $result): void
+  public function testprocExecutesCommandAsynchronouslyInChildProcess($args, $result): void
   {
-    $exec = f\toException(
-      function () use ($args, $result) {
-        return $this->waitForPromise(
-          procExec(...$args)->then(null, function ($_) use ($result) {
-            return $result;
-          }),
-          (int) $GLOBALS['timeout']
-        );
+    $exec = toException(
+      function (...$args) {
+        return await(proc(...$args));
       },
-      function () use ($result) {
-        return $this->waitForPromise(
-          resolve($result),
-          (int) $GLOBALS['timeout']
-        );
+      function ($err) {
+        return $err->getMessage();
       }
-    );
-
-    $this->assertEquals($result, $exec());
-  }
-
-  public function phpGeneratorProvider(): array
-  {
-    return [
-      [
-        [f\filePath(0), f\identity . '(12)'],
-        'php -r \'require "' . f\filePath(0) . '/vendor/autoload.php"; echo json_encode(' . f\identity . '(12));\'',
-      ],
-      [
-        [f\filePath(0), 'file_get_contents("file.txt")', 'serialize'],
-        'php -r \'require "' . f\filePath(0) . '/vendor/autoload.php"; echo serialize(file_get_contents("file.txt"));\'',
-      ],
-    ];
-  }
-
-  /**
-   * @dataProvider phpGeneratorProvider
-   */
-  public function testphpGeneratorGeneratesPHPDirectiveWithSpecifiedFunctionCall($args, $result): void
-  {
-    $exec = phpGenerator(...$args);
+    )(...$args);
 
     $this->assertEquals($result, $exec);
-    $this->assertIsString($exec);
   }
 }
