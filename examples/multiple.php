@@ -15,11 +15,12 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use React\EventLoop\Loop;
 use Chemem\Asyncify\Async;
+
 use function React\Promise\all;
 
 const BASE_URI = 'https://jsonplaceholder.typicode.com/';
 
-$async = Async::create(Loop::get());
+$async = Async::create();
 
 $proc = all([
   $async->call('file_get_contents', [BASE_URI . 'todos/1']),
