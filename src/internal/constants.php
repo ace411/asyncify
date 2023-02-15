@@ -22,7 +22,7 @@ function handleException(Throwable $exception): void
 }
 function handleError(...$args)
 {
-  echo "Error: " . $args[1] . PHP_EOL;
+  throw new \Exception($args[1]);
 }
 \set_error_handler("handleError", E_ALL);
 \set_exception_handler("handleException");
@@ -34,7 +34,7 @@ echo \base64_encode(
         return %s(...$args);
       },
       function ($err) {
-        return "Exception: " . $err->getMessage();
+        return new \Exception("Exception: " . $err->getMessage());
       }
     )(...\unserialize(\base64_decode("%s")))
   )

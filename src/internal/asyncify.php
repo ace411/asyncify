@@ -62,15 +62,13 @@ function asyncify(
   )
     ->then(
       function (?string $result) {
-        if (\preg_match('/(Error:)/', $result)) {
-          return reject(new \Exception(head(\explode(PHP_EOL, $result))));
+        $data = \unserialize(\base64_decode($result));
+
+        if ($data instanceof \Throwable) {
+          return reject(new \Exception($data->getMessage()));
         }
 
-        if (\preg_match('/(Exception:)/', $result)) {
-          return reject(new \Exception($result));
-        }
-
-        return resolve(\unserialize(\base64_decode($result)));
+        return resolve($data);
       }
     );
 }

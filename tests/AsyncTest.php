@@ -31,7 +31,7 @@ class AsyncTest extends TestCase
         ['file_get_contents', ['foo.txt']],
         concat(
           ' ',
-          'Error: file_get_contents(foo.txt):',
+          'Exception: file_get_contents(foo.txt):',
           PHP_VERSION_ID >= 80000 ? 'Failed' : 'failed',
           'to open stream: No such file or directory'
         ),
@@ -41,8 +41,7 @@ class AsyncTest extends TestCase
         ['file_get_contents', []],
         concat(
           ' ',
-          PHP_VERSION_ID >= 80000 ? 'Exception:' : 'Error:',
-          'file_get_contents() expects at least 1',
+          'Exception: file_get_contents() expects at least 1',
           PHP_VERSION_ID >= 80000 ? 'argument,' : 'parameter,',
           '0 given'
         ),
@@ -53,7 +52,7 @@ class AsyncTest extends TestCase
           '(function ($file) { if (!\is_file($file)) { trigger_error("Could not find file " . $file); } return \file_get_contents($file); })',
           ['foo.txt'],
         ],
-        'Error: Could not find file foo.txt',
+        'Exception: Could not find file foo.txt',
       ],
       // check if objects can be passed
       [
