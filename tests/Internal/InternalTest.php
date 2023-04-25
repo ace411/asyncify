@@ -20,7 +20,7 @@ class InternalTest extends TestCase
       // php commandline process
       [['php -r \'echo "foo";\''], 'foo'],
       // invalid input
-      [['kat --foo'], ''],
+      [['kat --foo'], 'Closed process "kat --foo"'],
     ];
   }
 

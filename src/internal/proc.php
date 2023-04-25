@@ -14,10 +14,8 @@ namespace Chemem\Asyncify\Internal;
 
 use React\ChildProcess\Process;
 use React\EventLoop\LoopInterface;
+use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
-
-use function React\Promise\reject;
-use function React\Promise\Stream\buffer;
 
 const proc = __NAMESPACE__ . '\\proc';
 
@@ -33,19 +31,64 @@ const proc = __NAMESPACE__ . '\\proc';
  * @return PromiseInterface
  * @example
  *
- * proc('php -r "echo 12;"')
- * => object(React\Promise\Promise) {}
+ * proc('php -r "echo 12 . PHP_EOL;"')
+ *  ->then(
+ *    function ($result) {
+ *      echo $result;
+ *    }
+ *  )
+ * => 12
  */
 function proc(string $process, ?LoopInterface $loop = null): PromiseInterface
 {
-  $proc = new Process($process);
+  $proc   = new Process($process);
+  $result = new Deferred();
   $proc->start($loop);
 
   if (!$proc->stdout->isReadable()) {
-    return reject(
-      new \Exception(\sprintf('Could not process %s', $process))
+    $result->reject(
+      new \Exception(
+        \sprintf('Could not process "%s"', $process)
+      )
     );
+
+    return $result;
   }
 
-  return buffer($proc->stdout);
+  $proc->stdout->on(
+    'data',
+    function ($chunk) use (&$result) {
+      $result->resolve($chunk);
+    }
+  );
+
+  // reject promise in the event of failure
+  $proc->stdout->on(
+    'error',
+    function (\Throwable $err) use (&$result, &$proc) {
+      $result->reject($err);
+    }
+  );
+
+  // handle successful closure of the process stream
+  $proc->stdout->on(
+    'end',
+    function () use (&$result) {
+      $result->resolve(true);
+    }
+  );
+
+  // handle unsuccessful closure of process stream
+  $proc->stdout->on(
+    'close',
+    function () use (&$result, $process) {
+      $result->reject(
+        new \Exception(
+          \sprintf('Closed process "%s"', $process)
+        )
+      );
+    }
+  );
+
+  return $result->promise();
 }
