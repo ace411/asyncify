@@ -63,6 +63,20 @@ class Async
    * @param string $function
    * @param array $args
    * @return PromiseInterface
+   * @example
+   *
+   * $async = Async::create('/path/to/autoload.php');
+   * $res = $async
+   *  ->call('file_get_contents', ['path/to/file'])
+   *  ->then(
+   *    function (string $contents) {
+   *      echo $contents . PHP_EOL;
+   *    },
+   *    function (Throwable $err) {
+   *      echo $err->getMessage() . PHP_EOL;
+   *    }
+   *  )
+   * => file_get_contents(/path/to/file): Failed to open stream: No such file or directory
    */
   public function call(string $function, array $args): PromiseInterface
   {

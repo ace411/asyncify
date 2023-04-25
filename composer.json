@@ -14,7 +14,7 @@
     "php": ">=7.2",
     "chemem/bingo-functional": "~2",
     "react/child-process": "~0",
-    "react/promise-stream": "~1"
+    "react/promise": "~2"
   },
   "require-dev": {
     "ergebnis/composer-normalize": "~2",

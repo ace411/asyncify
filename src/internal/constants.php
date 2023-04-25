@@ -18,7 +18,7 @@ namespace Chemem\Asyncify\Internal;
 const PHP_EXECUTABLE_TEMPLATE = <<<'PHP'
 function handleException(Throwable $exception): void
 {
-  echo "Exception: " . $exception->getMessage();
+  echo $exception->getMessage();
 }
 function handleError(...$args)
 {
@@ -34,7 +34,11 @@ echo \base64_encode(
         return %s(...$args);
       },
       function ($err) {
-        return new \Exception("Exception: " . $err->getMessage());
+        return new \Exception(
+          $err->getMessage(),
+          $err->getCode(),
+          $err->getPrevious()
+        );
       }
     )(...\unserialize(\base64_decode("%s")))
   )
