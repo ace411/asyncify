@@ -25,6 +25,18 @@ const call = __NAMESPACE__ . '\\call';
  *
  * @param mixed ...$args
  * @return mixed
+ * @example
+ *
+ * call('file_get_contents', ['path/to/file'])
+ *  ->then(
+ *    function (string $contents) {
+ *      echo $contents . PHP_EOL;
+ *    },
+ *    function (Throwable $err) {
+ *      echo $err->getMessage() . PHP_EOL;
+ *    }
+ *  )
+ * => file_get_contents(/path/to/file): Failed to open stream: No such file or directory
  */
 function call(...$args)
 {

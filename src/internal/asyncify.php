@@ -35,6 +35,18 @@ const asyncify = __NAMESPACE__ . '\\asyncify';
  * @param string|null $autoload
  * @param LoopInterface|null $loop
  * @return PromiseInterface
+ * @example
+ *
+ * $data = asyncify('file_get_contents', ['path/to/file'])
+ *  ->then(
+ *    function (string $contents) {
+ *      echo $contents . PHP_EOL;
+ *    },
+ *    function (Throwable $err) {
+ *      echo $err->getMessage() . PHP_EOL;
+ *    }
+ *  )
+ * => file_get_contents(/path/to/file): Failed to open stream: No such file or directory
  */
 function asyncify(
   string $function,
