@@ -70,15 +70,19 @@ $exec = Async::create()
 
 The examples directory contains more nuanced uses of the library that I recommend you check out.
 
-## Limitation
+## Limitations
 
-`asyncify` is no panacea, but is capable of asynchronously executing a plethora of blocking calls. As presently constituted, the library is incapable of processing inputs and outputs that cannot be serialized.
+- `asyncify` is no panacea, but is capable of asynchronously executing a plethora of blocking calls. As presently constituted, the library is **incapable of processing inputs and outputs that cannot be serialized**. Its quintessential asynchronous function application primitive - `call()` - works almost exclusively with string encodings of native language functions and lambdas imported via an autoloading mechanism.
+
+- The library cannot parse closures. All executable arbitrary code should be emplaced in a string whose sole constituent is an immediately invokable anonymous function the format of which is `(function (...$args) { /* signature */ })`.
 
 ## API Reference
 
 ### Object
 
 ```php
+namespace Chemem\Asyncify;
+
 class Async {
 
   /* Methods */
@@ -94,6 +98,8 @@ class Async {
 ### Function
 
 ```php
+namespace Chemem\Asyncify;
+
 call ( string $func [, array $args [, ?string $autoload = null [, ?React\EventLoop\LoopInterface $args = null ] ] ] ) : React\Promise\PromiseInterface;
 ```
 
