@@ -69,7 +69,7 @@ function asyncify(
           // composable exception handler
           toException,
           // format inline functions
-          $replace($function),
+          $function,
           // utilize only array values as arguments
           \base64_encode(
             \serialize(
