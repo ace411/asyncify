@@ -5,23 +5,20 @@
 [![StyleCI](https://github.styleci.io/repos/365018048/shield?branch=master)](https://github.styleci.io/repos/365018048?branch=master)
 [![asyncify CI](https://github.com/ace411/asyncify/actions/workflows/ci.yml/badge.svg)](https://github.com/ace411/asyncify/actions/workflows/ci.yml)
 [![License](http://poser.pugx.org/chemem/asyncify/license)](https://packagist.org/packages/chemem/asyncify)
-[![composer.lock](http://poser.pugx.org/chemem/asyncify/composerlock)](https://packagist.org/packages/chemem/asyncify)
-[![Dependents](http://poser.pugx.org/chemem/asyncify/dependents)](https://packagist.org/packages/chemem/asyncify)
 [![Latest Stable Version](http://poser.pugx.org/chemem/asyncify/v)](https://packagist.org/packages/chemem/asyncify)
+[![PHP Version Require](http://poser.pugx.org/chemem/asyncify/require/php)](https://packagist.org/packages/chemem/asyncify)
 
 </span>
 
-A simple PHP library that runs your synchronous PHP functions asynchronously.
+A simple library with which to run blocking I/O in a non-blocking fashion.
 
 ## Requirements
 
-- PHP 7.2 or higher
+- PHP 7.2 or newer
 
 ## Rationale
 
-PHP is a largely synchronous (blocking) runtime. Asynchrony - achievable via ReactPHP and other similar suites - is a potent approach to mitigating the arduousness of I/O operations that feature prominently in day-to-day programming. Melding blocking and non-blocking routines in PHP can be a tricky proposition: when attempted haphazardly, it can yield unsightly outcomes.
-
-The impetus for creating and maintaining `asyncify` is combining blocking and non-blocking PHP. Built atop ReactPHP, `asyncify` is a tool that allows one to run blocking PHP functions in an event-driven I/O environment.
+PHP is home to a host of functions that condition CPU idleness between successive (serial) executions—blocking functions. The expense of blocking calls—invocations of such functions—is such that they can, when deployed haphazardly in evented systems, inflict unnecessary CPU waiting behavior whilst the kernel attempts to interleave non-blocking calls. `asyncify` is a bridge between the blocking I/O in the language userspace and the evented I/O in ReactPHP. It allows those who choose to avail themselves of it the ability to run their blocking code, with minimal plumbing, in evented systems, without derailing them.
 
 ## Installation
 
@@ -29,6 +26,12 @@ Though it is possible to clone the repo, Composer remains the best tool for inst
 
 ```sh
 $ composer require chemem/asyncify
+```
+
+Newer versions of the library prioritize multithreading. The precondition for operationalizing multithreading is installing the [parallel](https://github.com/krakjoe/parallel) extension (`ext-parallel`) and [`react-parallel/runtime`](https://github.com/reactphp-parallel/runtime) library which can be done in a single step as in the snippet below.
+
+```sh
+$ pie install pecl/parallel ; composer require react-parallel/runtime
 ```
 
 ## Usage
@@ -74,7 +77,33 @@ The examples directory contains more nuanced uses of the library that I recommen
 
 - `asyncify` is no panacea, but is capable of asynchronously executing a plethora of blocking calls. As presently constituted, the library is **incapable of processing inputs and outputs that cannot be serialized**. Its quintessential asynchronous function application primitive - `call()` - works almost exclusively with string encodings of native language functions and lambdas imported via an autoloading mechanism.
 
-- The library cannot parse closures. All executable arbitrary code should be emplaced in a string whose sole constituent is an immediately invokable anonymous function the format of which is `(function (...$args) { /* signature */ })`.
+- The library, in its default configuration, cannot parse closures. All executable arbitrary code should be emplaced in a string whose sole constituent is an immediately invokable anonymous function the format of which is `(function (...$args) { /* signature */ })`.
+
+## Multithreading
+
+With multithreading enabled, it is possible to invoke closures and other lambdas without necessarily representing them as strings. Although string encodings are still workable, lambdas like closures should be the preferred option for representing arbitrary blocking logic. The code in the following example should work with multithreading enabled.
+
+```php
+use function Chemem\Asyncify\call;
+
+$exec = call(
+  function (...$args) {
+    return \file_get_contents(...$args);
+  },
+  ['/path/to/file']
+);
+
+$exec->then(
+  function (string $contents) {
+    echo $contents;
+  },
+  function (\Throwable $err) {
+    echo $err->getMessage();
+  }
+);
+```
+
+> It must be noted that string representations of lambdas (anonymous functions, closures and such) that are compatible with the default child process configuration, are not usable in versions that support multithreading.
 
 ## API Reference
 
@@ -83,11 +112,16 @@ The examples directory contains more nuanced uses of the library that I recommen
 ```php
 namespace Chemem\Asyncify;
 
+use React\{
+  EventLoop\LoopInterface,
+  Promise\PromiseInterface,
+};
+
 class Async {
 
   /* Methods */
-  public static create( ?string $autoload = null [, ?React\EventLoop\LoopInterface $rootDir = null ] ) : Async;
-  public function call( string $function [, array $args ] ) : React\Promise\PromiseInterface;
+  public static create( ?string $autoload = null [, ?LoopInterface $rootDir = null ] ) : Async;
+  public function call( string|callable $function [, array $args ] ) : PromiseInterface;
 }
 ```
 
@@ -100,7 +134,12 @@ class Async {
 ```php
 namespace Chemem\Asyncify;
 
-call ( string $func [, array $args [, ?string $autoload = null [, ?React\EventLoop\LoopInterface $args = null ] ] ] ) : React\Promise\PromiseInterface;
+use React\{
+  EventLoop\LoopInterface,
+  Promise\PromiseInterface,
+};
+
+call ( string|callable $func [, array $args [, ?string $autoload = null [, ?LoopInterface $args = null ] ] ] ) : PromiseInterface;
 ```
 
 `call` - Curryied function that bootstraps asynchronous function calls
