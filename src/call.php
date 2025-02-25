@@ -12,7 +12,16 @@ declare(strict_types=1);
 
 namespace Chemem\Asyncify;
 
+use React\EventLoop\Loop;
+use ReactParallel\EventLoop\EventLoopBridge;
+use ReactParallel\Runtime\Runtime;
+
 use function Chemem\Bingo\Functional\curry;
+use function Chemem\Bingo\Functional\filePath;
+
+use const Chemem\Asyncify\Internal\asyncify;
+use const Chemem\Asyncify\Internal\thread;
+use const Chemem\Asyncify\Internal\PHP_THREADABLE;
 
 const call = __NAMESPACE__ . '\\call';
 
@@ -21,7 +30,7 @@ const call = __NAMESPACE__ . '\\call';
  * curryied version of asyncify
  * -> allows users to bootstrap asynchronous function calls
  *
- * call :: String -> Array -> String -> Object -> (String -> Array -> String -> Object -> Promise s a) -> Promise s a
+ * call :: Sum String (a -> b) -> Array -> Bool -> (String -> Array -> String -> Object -> Promise s b)
  *
  * @param mixed ...$args
  * @return mixed
@@ -35,14 +44,41 @@ const call = __NAMESPACE__ . '\\call';
  *    function (Throwable $err) {
  *      echo $err->getMessage() . PHP_EOL;
  *    }
- *  )
+ *  );
  * => file_get_contents(/path/to/file): Failed to open stream: No such file or directory
  */
 function call(...$args)
 {
-  $count = \count($args);
+  if (!PHP_THREADABLE) {
+    return curry(asyncify)(...$args);
+  }
 
-  return curry(Internal\asyncify)(
-    ...($count === 1 ? \array_merge($args, [null]) : $args)
+  // globally register runtime object
+  if (!isset($GLOBALS['RUNTIME'])) {
+    $GLOBALS['RUNTIME'] = new Runtime(
+      new EventLoopBridge(
+        $args[3] ?? Loop::get()
+      ),
+      $args[2] ?? filePath(0, 'vendor/autoload.php')
+    );
+  }
+
+  // close runtime on shutdown
+  \register_shutdown_function(
+    function () {
+      if (isset($GLOBALS['RUNTIME'])) {
+        ($GLOBALS['RUNTIME'])->close();
+        unset($GLOBALS['RUNTIME']);
+      }
+    }
+  );
+
+  return curry(thread)(
+    ...(
+      \array_merge(
+        \array_slice($args, 0, 2),
+        [$GLOBALS['RUNTIME']]
+      )
+    )
   );
 }
