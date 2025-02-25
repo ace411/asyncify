@@ -62,7 +62,9 @@ class Async
 
   public function __destruct()
   {
-    $this->runtime->close();
+    if (isset($this->runtime)) {
+      $this->runtime->close();
+    }
   }
 
   /**
