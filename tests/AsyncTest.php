@@ -8,10 +8,8 @@ use Chemem\Asyncify\Async;
 use PHPUnit\Framework\TestCase;
 
 use function Chemem\Asyncify\call;
-use function Chemem\Bingo\Functional\concat;
 use function Chemem\Bingo\Functional\toException;
 use function React\Async\await;
-use function React\Promise\resolve;
 
 use const Chemem\Asyncify\Internal\PHP_THREADABLE;
 
