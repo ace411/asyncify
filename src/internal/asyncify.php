@@ -22,6 +22,8 @@ use function Chemem\Bingo\Functional\partial;
 use function React\Promise\reject;
 use function React\Promise\resolve;
 
+use const Chemem\Bingo\Functional\toException;
+
 const asyncify = __NAMESPACE__ . '\\asyncify';
 
 /**
@@ -45,7 +47,7 @@ const asyncify = __NAMESPACE__ . '\\asyncify';
  *    function (Throwable $err) {
  *      echo $err->getMessage() . PHP_EOL;
  *    }
- *  )
+ *  );
  * => file_get_contents(/path/to/file): Failed to open stream: No such file or directory
  */
 function asyncify(
@@ -54,30 +56,43 @@ function asyncify(
   ?string $autoload     = null,
   ?LoopInterface $loop  = null
 ): PromiseInterface {
-  // create custom variant of str_replace to format executable code
-  $replace = partial('str_replace', PHP_EOL, ' ');
-
   return proc(
     \sprintf(
-      // executable PHP command
-      concat('', 'php -r \'', $replace(PHP_EXECUTABLE_TEMPLATE), '\''),
-      // path to autoloader
-      \is_null($autoload) ? filePath(0, 'vendor/autoload.php') : $autoload,
-      // composable exception handler
-      \Chemem\Bingo\Functional\toException,
-      // format inline functions
-      $replace($function),
-      // utilize only array values as arguments
-      \base64_encode(\serialize(\array_values($args)))
+      'php -r \'%s\'',
+      \preg_replace(
+        ['/(\s){2,}/', '/(\\n)/'],
+        '',
+        \sprintf(
+          PHP_EXECUTABLE_TEMPLATE,
+          // path to autoloader
+          $autoload ?? filePath(0, 'vendor/autoload.php'),
+          // composable exception handler
+          toException,
+          // format inline functions
+          $replace($function),
+          // utilize only array values as arguments
+          \base64_encode(
+            \serialize(
+              \array_values($args)
+            )
+          )
+        )
+      )
     ),
     $loop
   )
     ->then(
       function (?string $result) {
-        $data = \unserialize(\base64_decode($result));
+        $data = \unserialize(
+          \base64_decode($result)
+        );
 
         if ($data instanceof \Throwable) {
-          return reject(new \Exception($data->getMessage()));
+          return reject(
+            new \Exception(
+              $data->getMessage()
+            )
+          );
         }
 
         return resolve($data);
