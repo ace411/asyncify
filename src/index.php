@@ -11,4 +11,5 @@
 require_once __DIR__ . '/internal/asyncify.php';
 require_once __DIR__ . '/internal/constants.php';
 require_once __DIR__ . '/internal/proc.php';
+require_once __DIR__ . '/internal/thread.php';
 require_once __DIR__ . '/call.php';
