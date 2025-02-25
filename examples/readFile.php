@@ -20,7 +20,7 @@ use function Chemem\Asyncify\call;
 $call = call('file_get_contents', [])
   ->then(
     function (?int $result) {
-      echo \sprintf("Wrote %d bytes\n", $result);
+      echo \sprintf("Read %d bytes\n", $result);
     },
     function (\Throwable $err) {
       echo $err->getMessage() . PHP_EOL;
