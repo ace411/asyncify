@@ -19,8 +19,11 @@ use function Chemem\Asyncify\call;
 
 $call = call('file_get_contents', [])
   ->then(
-    function (?int $result) {
-      echo \sprintf("Read %d bytes\n", $result);
+    function (?string $result) {
+      echo \sprintf(
+        "Read %d bytes\n",
+        \strlen($result)
+      );
     },
     function (\Throwable $err) {
       echo $err->getMessage() . PHP_EOL;
