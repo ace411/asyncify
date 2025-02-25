@@ -1,6 +1,6 @@
 {
   "name": "chemem/asyncify",
-  "description": "A package that runs synchronous PHP functions asynchronously.",
+  "description": "A simple library with which to run blocking I/O in a non-blocking fashion.",
   "license": "Apache-2.0",
   "type": "library",
   "authors": [
@@ -12,15 +12,19 @@
   ],
   "require": {
     "php": ">=7.2",
-    "chemem/bingo-functional": "~2",
-    "react/child-process": "~0",
-    "react/promise": "~2"
+    "chemem/bingo-functional": "^2",
+    "react/child-process": "^0",
+    "react/promise": "^2 || ^3"
   },
   "require-dev": {
-    "ergebnis/composer-normalize": "~2",
-    "friendsofphp/php-cs-fixer": "~2 || ~3",
-    "phpunit/phpunit": "~8 || ~9",
-    "react/async": "~3 || ~4"
+    "ergebnis/composer-normalize": "^2",
+    "friendsofphp/php-cs-fixer": "^2 || ^3",
+    "phpunit/phpunit": "^8 || ^9",
+    "react/async": "^3 || ^4"
+  },
+  "suggest": {
+    "ext-parallel": "A succinct parallel concurrency API for PHP 8",
+    "react-parallel/runtime": "Convinence wrapper around the ext-parallel Runtime and ReactPHP"
   },
   "minimum-stability": "stable",
   "autoload": {
