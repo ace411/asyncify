@@ -25,13 +25,13 @@ class AsyncTest extends TestCase
               function (...$args) {
                 return \file_get_contents(...$args);
               } :
-              <<<'PHP'
+              <<<EOF
               (
-                function (...$args) {
-                  return \file_get_contents(...$args);
+                function (...\$args) {
+                  return file_get_contents(...\$args);
                 }
               )
-              PHP
+              EOF
           ),
           ['foo.txt']
         ],
@@ -43,13 +43,13 @@ class AsyncTest extends TestCase
       ],
       [
         [
-          <<<'PHP'
+          <<<EOF
           (
-            function ($cmd) {
-              return exec($cmd);
+            function (\$cmd) {
+              return exec(\$cmd);
             }
           )
-          PHP,
+          EOF,
           ['echo "foo"'],
         ],
         (
