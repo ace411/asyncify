@@ -25,13 +25,7 @@ class AsyncTest extends TestCase
               function (...$args) {
                 return \file_get_contents(...$args);
               } :
-              <<<EOF
-              (
-                function (...\$args) {
-                  return file_get_contents(...\$args);
-                }
-              )
-              EOF
+              '(function (...$args) { return file_get_contents(...$args); })'
           ),
           ['foo.txt']
         ],
@@ -43,13 +37,7 @@ class AsyncTest extends TestCase
       ],
       [
         [
-          <<<EOF
-          (
-            function (\$cmd) {
-              return exec(\$cmd);
-            }
-          )
-          EOF,
+          '(function ($cmd) { return exec($cmd); })',
           ['echo "foo"'],
         ],
         (
@@ -57,6 +45,49 @@ class AsyncTest extends TestCase
             '/(Call to undefined function)/i' :
             '/^(foo)$/'
         )
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (string $value) {
+                return ['foo' => $value];
+              } :
+              '(function (string $value) { return ["foo" => $value]; })'
+          ),
+          ['foo']
+        ],
+        ['foo' => 'foo'],
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $value) {
+                return (object) ['foo' => $value];
+              } :
+              '(function (int $value) { return (object) ["foo" => $value]; })'
+          ),
+          [12]
+        ],
+        (object) ['foo' => 12]
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $next) {
+                if ($next < 3) {
+                  throw new \Exception('Invalid argument');
+                }
+
+                return $next + 2;
+              } :
+              '(function (int $next) { if ($next < 3) { throw new Exception("Invalid argument"); } return $next + 2; })'
+          ),
+          [2]
+        ],
+        '/(Invalid argument)/i'
       ]
     ];
   }
@@ -75,10 +106,17 @@ class AsyncTest extends TestCase
       }
     )(...$args);
 
-    $this->assertMatchesRegularExpression(
-      $result,
-      $exec
-    );
+    if (\is_string($result)) {
+      $this->assertMatchesRegularExpression(
+        $result,
+        $exec
+      );
+    } else {
+      $this->assertEquals(
+        $result,
+        $exec
+      );
+    }
   }
 
   /**
@@ -96,9 +134,16 @@ class AsyncTest extends TestCase
       }
     )(...$args);
 
-    $this->assertMatchesRegularExpression(
-      $result,
-      $exec
-    );
+    if (\is_string($result)) {
+      $this->assertMatchesRegularExpression(
+        $result,
+        $exec
+      );
+    } else {
+      $this->assertEquals(
+        $result,
+        $exec
+      );
+    }
   }
 }
