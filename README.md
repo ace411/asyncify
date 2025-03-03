@@ -28,10 +28,12 @@ Though it is possible to clone the repo, Composer remains the best tool for inst
 $ composer require chemem/asyncify
 ```
 
-Newer versions of the library prioritize multithreading. The precondition for operationalizing multithreading is installing the [parallel](https://github.com/krakjoe/parallel) extension (`ext-parallel`) and [`react-parallel/runtime`](https://github.com/reactphp-parallel/runtime) library which can be done in a single step as in the snippet below.
+Newer versions of the library prioritize multithreading. The precondition for operationalizing multithreading is installing the [parallel](https://github.com/krakjoe/parallel) extension (`ext-parallel`) and [`react-parallel/runtime`](https://github.com/reactphp-parallel/runtime) library which can be done with the directives in the snippet below.
 
 ```sh
-$ pie install pecl/parallel ; composer require react-parallel/runtime
+$ pie install pecl/parallel
+$ echo "\nextension=parallel" >> "/path/to/php.ini"
+$ composer require react-parallel/runtime
 ```
 
 ## Usage
@@ -144,7 +146,10 @@ call ( string|callable $func [, array $args [, ?string $autoload = null [, ?Loop
 
 `call` - Curryied function that bootstraps asynchronous function calls
 
-> **Note:** `asyncify` utilizes the autoload file in the root directory of the project from which it is invoked.
+### Important Considerations
+
+- `asyncify`, by default, utilizes the autoload file (`autoload.php`) in the `vendor` directory of the composer project in which it resides.
+- The library converts all errors in the functions slated for non-blocking execution to exceptions.
 
 ## Dealing with problems
 
