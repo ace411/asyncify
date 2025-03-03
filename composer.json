@@ -12,7 +12,6 @@
   ],
   "require": {
     "php": ">=7.2",
-    "chemem/bingo-functional": "^2",
     "react/child-process": "^0",
     "react/promise": "^2 || ^3"
   },
@@ -24,7 +23,7 @@
   },
   "suggest": {
     "ext-parallel": "A succinct parallel concurrency API for PHP 8",
-    "react-parallel/runtime": "Convinence wrapper around the ext-parallel Runtime and ReactPHP"
+    "react-parallel/runtime": "Convenience wrapper around the ext-parallel Runtime and ReactPHP"
   },
   "minimum-stability": "stable",
   "autoload": {
