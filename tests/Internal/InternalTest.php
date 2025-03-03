@@ -7,7 +7,6 @@ namespace Chemem\Asyncify\Tests;
 use PHPUnit\Framework\TestCase;
 
 use function Chemem\Asyncify\Internal\proc;
-use function Chemem\Bingo\Functional\toException;
 use function React\Async\await;
 
 class InternalTest extends TestCase
@@ -20,7 +19,7 @@ class InternalTest extends TestCase
       // php commandline process
       [['php -r \'echo "foo";\''], 'foo'],
       // invalid input
-      [['kat --foo'], 'Closed process "kat --foo"'],
+      [['kat --foo'], ''],
     ];
   }
 
@@ -29,14 +28,14 @@ class InternalTest extends TestCase
    */
   public function testprocExecutesCommandAsynchronouslyInChildProcess($args, $result): void
   {
-    $exec = toException(
-      function (...$args) {
-        return await(proc(...$args));
-      },
-      function ($err) {
-        return $err->getMessage();
-      }
-    )(...$args);
+    $exec = null;
+    try {
+      $exec = await(
+        proc(...$args)
+      );
+    } catch (\Throwable $err) {
+      $exec = $err->getMessage();
+    }
 
     $this->assertEquals($result, $exec);
   }

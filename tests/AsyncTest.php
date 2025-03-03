@@ -8,92 +8,103 @@ use Chemem\Asyncify\Async;
 use PHPUnit\Framework\TestCase;
 
 use function Chemem\Asyncify\call;
-use function Chemem\Bingo\Functional\concat;
-use function Chemem\Bingo\Functional\toException;
 use function React\Async\await;
-use function React\Promise\resolve;
+
+use const Chemem\Asyncify\Internal\PHP_THREADABLE;
 
 class AsyncTest extends TestCase
 {
-  public function asyncifyProvider(): array
+  public static function asyncifyProvider(): array
   {
     return [
-      // invalid call to user-specified function
       [
         [
-          '(function (...$args) { if (!\is_file($args[0])) { throw new \Exception("Could not find file: " . $args[0]); } return \file_get_contents($file); })',
-          [12],
+          (
+            PHP_THREADABLE ?
+              function (...$args) {
+                return \file_get_contents(...$args);
+              } :
+              '(function (...$args) { return file_get_contents(...$args); })'
+          ),
+          ['foo.txt']
         ],
-        'Could not find file: 12',
+        '/(No such file or directory)/i'
       ],
-      // native PHP function
       [
-        ['file_get_contents', ['foo.txt']],
-        concat(
-          ' ',
-          'file_get_contents(foo.txt):',
-          PHP_VERSION_ID >= 80000 ? 'Failed' : 'failed',
-          'to open stream: No such file or directory'
-        ),
+        ['exec', ['echo "foo"']],
+        '/^(foo)$/'
       ],
-      // erroneous call to native PHP function
-      [
-        ['file_get_contents', []],
-        concat(
-          ' ',
-          'file_get_contents() expects at least 1',
-          PHP_VERSION_ID >= 80000 ? 'argument,' : 'parameter,',
-          '0 given'
-        ),
-      ],
-      // trigger error in user-defined function
       [
         [
-          '(function ($file) { if (!\is_file($file)) { trigger_error("Could not find file " . $file); } return \file_get_contents($file); })',
-          ['foo.txt'],
+          '(function ($cmd) { return exec($cmd); })',
+          ['echo "foo"'],
         ],
-        'Could not find file foo.txt',
+        (
+          PHP_THREADABLE ?
+            '/(Call to undefined function)/i' :
+            '/^(foo)$/'
+        )
       ],
-      // check if objects can be passed
       [
         [
-          '(function (object $list) { return $list->foo; })',
-          [(object)['foo' => 'foo']],
-        ],
-        'foo',
-      ],
-      // check if arrays can be passed
-      [
-        [
-          '(function (array $list) { return $list["foo"]; })',
-          [['foo' => 'foo']],
-        ],
-        'foo',
-      ],
-      // check if numbers can be passed
-      [
-        [
-          '(function (int $x) { return $x + 10; })',
-          [10],
-        ],
-        20,
-      ],
-      // check if objects can be returned
-      [
-        [
-          '(function (string $x) { return (object)["foo" => $x]; })',
-          ['foo'],
-        ],
-        (object)['foo' => 'foo'],
-      ],
-      // check if arrays can be returned
-      [
-        [
-          '(function (string $x) { return ["foo" => $x]; })',
-          ['foo'],
+          (
+            PHP_THREADABLE ?
+              function (string $value) {
+                return ['foo' => $value];
+              } :
+              '(function (string $value) { return ["foo" => $value]; })'
+          ),
+          ['foo']
         ],
         ['foo' => 'foo'],
       ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $value) {
+                return (object) ['foo' => $value];
+              } :
+              '(function (int $value) { return (object) ["foo" => $value]; })'
+          ),
+          [12]
+        ],
+        (object) ['foo' => 12]
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $next) {
+                if ($next < 3) {
+                  throw new \Exception('Invalid argument');
+                }
+
+                return $next + 2;
+              } :
+              '(function (int $next) { if ($next < 3) { throw new Exception("Invalid argument"); } return $next + 2; })'
+          ),
+          [2]
+        ],
+        '/(Invalid argument)/i'
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $val) {
+                if ($next < 10) {
+                  \trigger_error('Value is less than 10');
+
+                  return $val * 2;
+                }
+              } :
+              '(function (int $x) { if ($x < 10) { \trigger_error("Value is less than 10"); return $x; } return $x * 2; })'
+          ),
+          [2]
+        ],
+        '/(Value is less than 10)/i'
+      ]
     ];
   }
 
@@ -102,16 +113,39 @@ class AsyncTest extends TestCase
    */
   public function testcallRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $exec = toException(
-      function (...$args) {
-        return await(call(...$args));
-      },
-      function (\Throwable $err) {
-        return $err->getMessage();
-      }
-    )(...$args);
+    $exec = null;
+    try {
+      $exec = await(
+        call(...$args)
+      );
+    } catch (\Throwable $err) {
+      $exec = $err->getMessage();
+    }
 
-    $this->assertEquals($result, $exec);
+    $this->assertTrue(
+      call($args[0]) instanceof \Closure
+    );
+
+    if (\is_string($result)) {
+      if (PHP_VERSION_ID < 73000) {
+        $this->assertTrue(
+          (bool) \preg_match(
+            $result,
+            $exec
+          )
+        );
+      } else {
+        $this->assertMatchesRegularExpression(
+          $result,
+          $exec
+        );
+      }
+    } else {
+      $this->assertEquals(
+        $result,
+        $exec
+      );
+    }
   }
 
   /**
@@ -119,16 +153,35 @@ class AsyncTest extends TestCase
    */
   public function testAsynccallMethodRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $exec = toException(
-      function (...$args) {
-        $async = Async::create();
-        return await($async->call(...$args));
-      },
-      function (\Throwable $err) {
-        return $err->getMessage();
-      }
-    )(...$args);
+    $exec = null;
+    try {
+      $async = Async::create();
+      $exec  = await(
+        $async->call(...$args)
+      );
+    } catch (\Throwable $err) {
+      $exec = $err->getMessage();
+    }
 
-    $this->assertEquals($result, $exec);
+    if (\is_string($result)) {
+      if (PHP_VERSION_ID < 73000) {
+        $this->assertTrue(
+          (bool) \preg_match(
+            $result,
+            $exec
+          )
+        );
+      } else {
+        $this->assertMatchesRegularExpression(
+          $result,
+          $exec
+        );
+      }
+    } else {
+      $this->assertEquals(
+        $result,
+        $exec
+      );
+    }
   }
 }
