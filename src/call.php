@@ -16,8 +16,8 @@ use React\EventLoop\Loop;
 use ReactParallel\EventLoop\EventLoopBridge;
 use ReactParallel\Runtime\Runtime;
 
-use function Chemem\Bingo\Functional\curry;
-use function Chemem\Bingo\Functional\filePath;
+use function Chemem\Asyncify\Internal\Functional\curry;
+use function Chemem\Asyncify\Internal\Functional\filepath;
 
 use const Chemem\Asyncify\Internal\asyncify;
 use const Chemem\Asyncify\Internal\thread;
@@ -59,7 +59,7 @@ function call(...$args)
       new EventLoopBridge(
         $args[3] ?? Loop::get()
       ),
-      $args[2] ?? filePath(0, 'vendor/autoload.php')
+      $args[2] ?? filepath(0, 'vendor/autoload.php')
     );
   }
 

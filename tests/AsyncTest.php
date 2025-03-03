@@ -8,7 +8,6 @@ use Chemem\Asyncify\Async;
 use PHPUnit\Framework\TestCase;
 
 use function Chemem\Asyncify\call;
-use function Chemem\Bingo\Functional\toException;
 use function React\Async\await;
 
 use const Chemem\Asyncify\Internal\PHP_THREADABLE;
@@ -88,6 +87,23 @@ class AsyncTest extends TestCase
           [2]
         ],
         '/(Invalid argument)/i'
+      ],
+      [
+        [
+          (
+            PHP_THREADABLE ?
+              function (int $val) {
+                if ($next < 10) {
+                  \trigger_error('Value is less than 10');
+
+                  return $val * 2;
+                }
+              } :
+              '(function (int $x) { if ($x < 10) { \trigger_error("Value is less than 10"); return $x; } return $x * 2; })'
+          ),
+          [2]
+        ],
+        '/(Value is less than 10)/i'
       ]
     ];
   }
@@ -97,20 +113,33 @@ class AsyncTest extends TestCase
    */
   public function testcallRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $exec = toException(
-      function (...$args) {
-        return await(call(...$args));
-      },
-      function (\Throwable $err) {
-        return $err->getMessage();
-      }
-    )(...$args);
+    $exec = null;
+    try {
+      $exec = await(
+        call(...$args)
+      );
+    } catch (\Throwable $err) {
+      $exec = $err->getMessage();
+    }
+
+    $this->assertTrue(
+      call($args[0]) instanceof \Closure
+    );
 
     if (\is_string($result)) {
-      $this->assertMatchesRegularExpression(
-        $result,
-        $exec
-      );
+      if (PHP_VERSION_ID < 73000) {
+        $this->assertTrue(
+          (bool) \preg_match(
+            $result,
+            $exec
+          )
+        );
+      } else {
+        $this->assertMatchesRegularExpression(
+          $result,
+          $exec
+        );
+      }
     } else {
       $this->assertEquals(
         $result,
@@ -124,21 +153,30 @@ class AsyncTest extends TestCase
    */
   public function testAsynccallMethodRunsSynchronousPHPFunctionAsynchronously($args, $result): void
   {
-    $exec = toException(
-      function (...$args) {
-        $async = Async::create();
-        return await($async->call(...$args));
-      },
-      function (\Throwable $err) {
-        return $err->getMessage();
-      }
-    )(...$args);
+    $exec = null;
+    try {
+      $async = Async::create();
+      $exec  = await(
+        $async->call(...$args)
+      );
+    } catch (\Throwable $err) {
+      $exec = $err->getMessage();
+    }
 
     if (\is_string($result)) {
-      $this->assertMatchesRegularExpression(
-        $result,
-        $exec
-      );
+      if (PHP_VERSION_ID < 73000) {
+        $this->assertTrue(
+          (bool) \preg_match(
+            $result,
+            $exec
+          )
+        );
+      } else {
+        $this->assertMatchesRegularExpression(
+          $result,
+          $exec
+        );
+      }
     } else {
       $this->assertEquals(
         $result,

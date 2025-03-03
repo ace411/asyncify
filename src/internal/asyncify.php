@@ -15,14 +15,9 @@ namespace Chemem\Asyncify\Internal;
 use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
-use function Chemem\Bingo\Functional\concat;
-use function Chemem\Bingo\Functional\filePath;
-use function Chemem\Bingo\Functional\head;
-use function Chemem\Bingo\Functional\partial;
+use function Chemem\Asyncify\Internal\Functional\filepath;
 use function React\Promise\reject;
 use function React\Promise\resolve;
-
-use const Chemem\Bingo\Functional\toException;
 
 const asyncify = __NAMESPACE__ . '\\asyncify';
 
@@ -65,10 +60,8 @@ function asyncify(
         \sprintf(
           PHP_EXECUTABLE_TEMPLATE,
           // path to autoloader
-          $autoload ?? filePath(0, 'vendor/autoload.php'),
-          // composable exception handler
-          toException,
-          // format inline functions
+          $autoload ?? filepath(0, 'vendor/autoload.php'),
+          // arbitrary function
           $function,
           // utilize only array values as arguments
           \base64_encode(

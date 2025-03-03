@@ -19,8 +19,7 @@ use ReactParallel\Runtime\Runtime;
 
 use function Chemem\Asyncify\Internal\asyncify;
 use function Chemem\Asyncify\Internal\thread;
-use function Chemem\Bingo\Functional\extend;
-use function Chemem\Bingo\Functional\filePath;
+use function Chemem\Asyncify\Internal\Functional\filepath;
 
 use const Chemem\Asyncify\Internal\PHP_THREADABLE;
 
@@ -55,7 +54,7 @@ class Async
     if (PHP_THREADABLE) {
       $this->runtime = new Runtime(
         new EventLoopBridge($this->loop),
-        $this->autoload ?? filePath(0, 'vendor/autoload.php')
+        $this->autoload ?? filepath(0, 'vendor/autoload.php')
       );
     }
   }
@@ -114,13 +113,13 @@ class Async
 
     return PHP_THREADABLE ?
       thread(
-        ...extend(
+        ...\array_merge(
           $params,
           [$this->runtime]
         )
       ) :
       asyncify(
-        ...extend(
+        ...\array_merge(
           $params,
           [
             $this->autoload,

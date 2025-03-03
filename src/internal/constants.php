@@ -35,8 +35,7 @@ const PHP_EXECUTABLE_TEMPLATE = <<<'PHP'
   function (...$args) {
     [$errno, $errmsg] = $args;
     throw new \Exception($errmsg, $errno);
-  },
-  E_ALL
+  }
 );
 \set_exception_handler(
   function (Throwable $err) {
@@ -44,20 +43,21 @@ const PHP_EXECUTABLE_TEMPLATE = <<<'PHP'
   }
 );
 require_once "%s";
+$result = null;
+try {
+  $result = (
+    function (...$args) {
+      return %s(...$args);
+    }
+  )(
+    ...\unserialize(
+      \base64_decode("%s")
+    )
+  );
+} catch (\Throwable $err) {
+  $result = $err;
+}
 echo \base64_encode(
-  \serialize(
-    %s(
-      function (...$args) {
-        return %s(...$args);
-      },
-      function ($err) {
-        return new \Exception(
-          $err->getMessage(),
-          $err->getCode(),
-          $err->getPrevious()
-        );
-      }
-    )(...\unserialize(\base64_decode("%s")))
-  )
+  \serialize($result)
 );
 PHP;
