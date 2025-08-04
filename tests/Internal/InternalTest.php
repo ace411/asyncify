@@ -19,7 +19,7 @@ class InternalTest extends TestCase
       // php commandline process
       [['php -r \'echo "foo";\''], 'foo'],
       // invalid input
-      [['kat --foo'], ''],
+      [['kat --foo'], "sh: 1: kat: not found\n"],
     ];
   }
 

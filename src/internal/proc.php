@@ -53,10 +53,12 @@ function proc(string $process, ?LoopInterface $loop = null): PromiseInterface
 
   return new Promise(
     function (callable $resolve, callable $reject) use (&$data, $proc) {
-      $proc->stdout->on(
-        'error',
-        function (\Throwable $err) use ($reject) {
-          $reject($err);
+      $proc->stderr->on(
+        'data',
+        function (string $err) use ($reject) {
+          $reject(
+            new \Exception($err)
+          );
         }
       );
 
